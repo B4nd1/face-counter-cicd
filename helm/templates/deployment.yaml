@@ -1,18 +1,64 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { .Release.Name } }-web
+  name: detector
   labels:
-    app: web
+    app: detector
 spec:
-  replicas: { { .Values.web.replicaCount | default 1 } }
   selector:
     matchLabels:
-      app: web
+      app: detector
   template:
     metadata:
       labels:
-        app: web
+        app: detector
+    spec:
+      containers:
+        - name: detector
+          image: b4nd1/detector:{{ .Values.env.DETECTOR_VERSION }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          volumeMounts:
+            - name: images-data
+              mountPath: /usr/src/app/images
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: images-data
+          persistentVolumeClaim:
+            claimName: images-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  labels:
+    app: webapp
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
     spec:
       initContainers:
         - name: check-db-ready
@@ -21,9 +67,11 @@ spec:
                      'until pg_isready -h {{ .Release.Name }}-db -p 5432; do echo waiting for database; sleep 2; done;' ]
       containers:
         - name: web
-          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          image: b4nd1/webapp:{{ .Values.env.APP_VERSION }}
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 8000
+              protocol: TCP
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -33,14 +81,22 @@ spec:
           volumeMounts:
             - name: images-data
               mountPath: /usr/src/app/images
-          resources:
-            { { toYaml .Values.web.resources | nindent 10 } }
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
       volumes:
         - name: images-data
           persistentVolumeClaim:
@@ -53,7 +109,6 @@ metadata:
   labels:
     app: db
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: db
@@ -84,8 +139,6 @@ spec:
           volumeMounts:
             - name: db-data
               mountPath: /var/lib/postgresql/data
-          resources:
-            { { toYaml .Values.db.resources | nindent 10 } }
       volumes:
         - name: db-data
           persistentVolumeClaim:

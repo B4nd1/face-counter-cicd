@@ -17,6 +17,9 @@ class DetectResponse(BaseModel):
     annotated: str
     count: int
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 @app.post("/detect", response_model=DetectResponse)
 def detect(req: DetectRequest):
     image_path = os.path.join("images", req.filename)
