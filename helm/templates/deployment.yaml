@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: { { .Release.Name } }-web
+  labels:
+    app: web
+spec:
+  replicas: { { .Values.web.replicaCount | default 1 } }
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      initContainers:
+        - name: check-db-ready
+          image: postgres:15
+          command: [ 'sh', '-c',
+                     'until pg_isready -h {{ .Release.Name }}-db -p 5432; do echo waiting for database; sleep 2; done;' ]
+      containers:
+        - name: web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: database_url
+          volumeMounts:
+            - name: images-data
+              mountPath: /usr/src/app/images
+          resources:
+            { { toYaml .Values.web.resources | nindent 10 } }
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: images-data
+          persistentVolumeClaim:
+            claimName: images-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: postgres:15
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-db
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            { { toYaml .Values.db.resources | nindent 10 } }
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-pvc

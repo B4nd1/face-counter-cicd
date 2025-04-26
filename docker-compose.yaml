@@ -11,7 +11,6 @@ services:
       - images-data:/usr/src/app/images
     depends_on:
       - db
-      - rabbitmq
 
   db:
     image: postgres:15
@@ -23,15 +22,6 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    env_file: .env
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
 
 volumes:
   images-data:
