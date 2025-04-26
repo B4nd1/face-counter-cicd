@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Upload & Detection</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; }
+    .upload-form { margin-bottom: 2rem; }
+    .gallery-item { margin-bottom: 1.5rem; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>Upload Image</h1>
+  <form class="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" required />
+    <input type="text" name="description" placeholder="Enter description" required />
+    <button type="submit">Upload & Detect</button>
+  </form>
+
+  <h2>Gallery</h2>
+  {% for image in images %}
+    <div class="gallery-item">
+      <p><strong>Description:</strong> {{ image.description }}</p>
+      <p><strong>Faces detected:</strong> {{ image.num_people }}</p>
+      <img src="/images/{{ image.annotated_path }}" alt="Annotated Image" />
+    </div>
+  {% else %}
+    <p>No images uploaded yet.</p>
+  {% endfor %}
+</body>
+</html>

@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-multipart
+pydantic
+opencv-python-headless
+python-dotenv
+jinja2
