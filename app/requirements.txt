@@ -4,6 +4,7 @@ sqlalchemy
 psycopg2-binary
 python-multipart
 pydantic
-opencv-python-headless
+# opencv-python-headless
 python-dotenv
 jinja2
+httpx

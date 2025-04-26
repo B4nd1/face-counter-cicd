@@ -5,10 +5,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from models import Base, ImageRecord, Subscriber, get_db, engine
-from detect import detect_and_annotate
+import httpx
+# from detect import detect_and_annotate
 
 # Init database tables
 Base.metadata.create_all(bind=engine)
+
+detector_url = os.getenv("DETECTOR_URL", "http://detector:8001/detect")
 
 app = FastAPI()
 
@@ -32,7 +35,12 @@ async def upload(request: Request, file: UploadFile = File(...),
         f.write(await file.read())
 
     # Run detection and annotation
-    annotated_fname, count = detect_and_annotate(file_location)
+    # annotated_fname, count = detect_and_annotate(file_location)
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(detector_url, json={"filename": file.filename})
+        data = resp.json()
+    annotated_fname = data["annotated"]
+    count = data["count"]
 
     # Store record in db
     record = ImageRecord(

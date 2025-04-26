@@ -7,10 +7,20 @@ services:
     environment:
       - DATABASE_URL=${database_url}
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DETECTOR_URL=${DETECTOR_URL}
     volumes:
       - images-data:/usr/src/app/images
     depends_on:
       - db
+      - detector
+
+  detector:
+    build: ./detector
+    ports:
+      - "8001:8001"
+    volumes:
+      - images-data:/usr/src/app/images
+    env_file: .env
 
   db:
     image: postgres:15
