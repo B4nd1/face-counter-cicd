@@ -20,9 +20,6 @@ spec:
             - name: http
               containerPort: 8001
               protocol: TCP
-          volumeMounts:
-            - name: images-data
-              mountPath: /usr/src/app/images
           readinessProbe:
             httpGet:
               path: /health
@@ -40,10 +37,6 @@ spec:
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
-      volumes:
-        - name: images-data
-          persistentVolumeClaim:
-            claimName: images-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
