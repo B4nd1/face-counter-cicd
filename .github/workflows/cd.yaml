@@ -37,7 +37,7 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.DETECT_IMAGE_NAME }}:${{ github.sha }} .
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.DETECT_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Update values.yaml and commit
+      - name: Update values.yaml
         run: |
           cd helm
           sed -i 's|APP_VERSION:.*|APP_VERSION: '${{ github.sha }}'|' values.yaml
