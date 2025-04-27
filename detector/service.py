@@ -1,8 +1,11 @@
 import os
 import cv2
-from fastapi import FastAPI, HTTPException, Body
+import numpy as np
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from io import BytesIO
 
 load_dotenv()
 app = FastAPI()
@@ -12,6 +15,7 @@ face_cascade = cv2.CascadeClassifier(cascade_path)
 
 class DetectRequest(BaseModel):
     filename: str
+    image: bytes
 
 class DetectResponse(BaseModel):
     annotated: str
@@ -21,16 +25,19 @@ class DetectResponse(BaseModel):
 def health_check():
     return {"status": "healthy"}
 @app.post("/detect", response_model=DetectResponse)
-def detect(req: DetectRequest):
-    image_path = os.path.join("images", req.filename)
-    img = cv2.imread(image_path)
+async def detect(file: UploadFile = File(...)):
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
-        raise HTTPException(status_code=404, detail="Image not found")
+        return {"error": "Invalid image"}
+
+    # Arc számlálás
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(30,30))
     for (x,y,w,h) in faces:
         cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
-    annotated = f"annotated_{req.filename}"
-    save_path = os.path.join("images", annotated)
-    cv2.imwrite(save_path, img)
-    return {"annotated": annotated, "count": len(faces)}
+
+    _, encoded_img = cv2.imencode('.jpg', img)
+    bytes_io = BytesIO(encoded_img.tobytes())
+    return StreamingResponse(bytes_io, media_type="image/jpeg")

@@ -39,7 +39,8 @@ async def upload(request: Request, file: UploadFile = File(...),
     # annotated_fname, count = detect_and_annotate(file_location)
     # Külön instance API-jának használata
     async with httpx.AsyncClient() as client:
-        resp = await client.post(detector_url, json={"filename": file.filename})
+        resp = await client.post(detector_url, json={"filename": file.filename,
+                                                     "image": file.file})
         data = resp.json()
 
     # Válaszból megkapja az információkat
@@ -56,17 +57,5 @@ async def upload(request: Request, file: UploadFile = File(...),
     db.add(record)
     db.commit()
     db.refresh(record)
-
-    accept_header = request.headers.get("accept", "")
-    if "application/json" in accept_header:
-        return JSONResponse(
-            content={
-                "filename": file.filename,
-                "description": description,
-                "faces_detected": count
-            },
-            status_code=200
-        )
-    else:
-        return RedirectResponse(url='/', status_code=303)
-    # return RedirectResponse(url='/', status_code=303)
+    # Fix: A "Képernyő újraküldésének megerősítése" bug feltöltés után
+    return RedirectResponse(url='/', status_code=303)
