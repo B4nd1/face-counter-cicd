@@ -6,7 +6,6 @@ services:
     env_file: .env
     environment:
       - DATABASE_URL=${database_url}
-      - RABBITMQ_URL=${RABBITMQ_URL}
       - DETECTOR_URL=${DETECTOR_URL}
     volumes:
       - images-data:/usr/src/app/images
