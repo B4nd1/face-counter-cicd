@@ -1,5 +1,5 @@
 env:
-  DETECTOR_VERSION: b7d56c846464e8c081abd432fdbf10bc1a10c2a0
-  APP_VERSION: b7d56c846464e8c081abd432fdbf10bc1a10c2a0
+  DETECTOR_VERSION: 60dbc305b7b9e4337dedfdec8dffab4bca6ef39b
+  APP_VERSION: 60dbc305b7b9e4337dedfdec8dffab4bca6ef39b
 
 
