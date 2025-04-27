@@ -1,37 +1,24 @@
 import base64
-import os
 import cv2
 import numpy as np
-from fastapi import FastAPI, UploadFile, File
-# from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from dotenv import load_dotenv
-# from io import BytesIO
+from fastapi import FastAPI, UploadFile, File, HTTPException
 
-load_dotenv()
 app = FastAPI()
 
 cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
-class DetectRequest(BaseModel):
-    filename: str
-    image: bytes
-
-class DetectResponse(BaseModel):
-    annotated: str
-    count: int
-
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
-        return {"error": "Invalid image"}
+        raise HTTPException(status_code=400, detail="Invalid image")
 
     # Arc számlálás
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

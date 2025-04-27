@@ -2,12 +2,11 @@ import os
 from fastapi import FastAPI, File, UploadFile, Form, Depends, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from models import Base, ImageRecord, Subscriber, get_db, engine
+from models import Base, ImageRecord, get_db, engine
 import httpx
 import base64
-# from detect import detect_and_annotate
 
 # Init database tables
 Base.metadata.create_all(bind=engine)
