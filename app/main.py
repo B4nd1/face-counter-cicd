@@ -48,7 +48,7 @@ async def upload(request: Request, file: UploadFile = File(...),
     annotated_path = f"annotated_{file.filename}"
     annotated_base64 = data["annotated_image_base64"]
     annotated_bytes = base64.b64decode(annotated_base64)
-    with open(annotated_path, "wb") as f:
+    with open(f"{IMAGES_LOC}/{annotated_path}", "wb") as f:
         f.write(annotated_bytes)
 
     count = data["faces_detected"]
