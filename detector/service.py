@@ -1,11 +1,12 @@
+import base64
 import os
 import cv2
 import numpy as np
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, UploadFile, File
+# from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from io import BytesIO
+# from io import BytesIO
 
 load_dotenv()
 app = FastAPI()
@@ -24,7 +25,7 @@ class DetectResponse(BaseModel):
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-@app.post("/detect", response_model=DetectResponse)
+@app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
@@ -39,5 +40,9 @@ async def detect(file: UploadFile = File(...)):
         cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
 
     _, encoded_img = cv2.imencode('.jpg', img)
-    bytes_io = BytesIO(encoded_img.tobytes())
-    return StreamingResponse(bytes_io, media_type="image/jpeg")
+    base64_image = base64.b64encode(encoded_img).decode('utf-8')
+
+    return {
+        "faces_detected": len(faces),
+        "annotated_image_base64": base64_image
+    }
