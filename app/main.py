@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, File, UploadFile, Form, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from models import Base, ImageRecord, Subscriber, get_db, engine
 import httpx
@@ -34,15 +34,19 @@ async def upload(request: Request, file: UploadFile = File(...),
     with open(file_location, "wb") as f:
         f.write(await file.read())
 
-    # Run detection and annotation
+    # Fájlon lefuttatja az arc detektálást
+    # Helyi
     # annotated_fname, count = detect_and_annotate(file_location)
+    # Külön instance API-jának használata
     async with httpx.AsyncClient() as client:
         resp = await client.post(detector_url, json={"filename": file.filename})
         data = resp.json()
+
+    # Válaszból megkapja az információkat
     annotated_fname = data["annotated"]
     count = data["count"]
 
-    # Store record in db
+    # Kép rögzítése az adatbázisban a modell alapján
     record = ImageRecord(
         filename=file.filename,
         description=description,
@@ -52,4 +56,17 @@ async def upload(request: Request, file: UploadFile = File(...),
     db.add(record)
     db.commit()
     db.refresh(record)
-    return RedirectResponse(url='/', status_code=303)
+
+    accept_header = request.headers.get("accept", "")
+    if "application/json" in accept_header:
+        return JSONResponse(
+            content={
+                "filename": file.filename,
+                "description": description,
+                "faces_detected": count
+            },
+            status_code=200
+        )
+    else:
+        return RedirectResponse(url='/', status_code=303)
+    # return RedirectResponse(url='/', status_code=303)
