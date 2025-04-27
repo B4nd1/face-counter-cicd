@@ -64,7 +64,7 @@ spec:
         - name: check-db-ready
           image: postgres:15
           command: [ 'sh', '-c',
-                     'until pg_isready -h {{ .Release.Name }}-db -p 5432; do echo waiting for database; sleep 2; done;' ]
+                     'until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;' ]
       containers:
         - name: web
           image: b4nd1/webapp_facedetect:{{ .Values.env.APP_VERSION }}
