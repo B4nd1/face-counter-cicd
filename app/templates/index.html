@@ -19,6 +19,14 @@
     <button type="submit">Upload & Detect number of faces</button>
   </form>
 
+  <form class="subscribe-form" action="/subscribe" method="post" enctype="multipart/form-data">
+    <input type="text" name="contact" required />
+    <select name="method" required>
+      <option value="email">Email</option>
+    </select>
+    <button type="submit">Subscribe</button>
+  </form>
+
   <h2>Gallery</h2>
   {% for image in images %}
     <div class="gallery-item">

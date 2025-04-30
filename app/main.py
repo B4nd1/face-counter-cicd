@@ -12,7 +12,10 @@ import base64
 Base.metadata.create_all(bind=engine)
 
 detector_url = os.getenv("DETECTOR_URL", "http://detector:8001/detect")
+NTIFY_URL = os.getenv("NTIFY_URL")
+
 IMAGES_LOC = "images"
+
 app = FastAPI()
 
 app.mount(f"/{IMAGES_LOC}", StaticFiles(directory=IMAGES_LOC), name=IMAGES_LOC)
@@ -62,5 +65,34 @@ async def upload(request: Request, file: UploadFile = File(...),
     db.add(record)
     db.commit()
     db.refresh(record)
+
+    await notify(record)
+
     # Fix: A "Képernyő újraküldésének megerősítése" bug feltöltés után
     return RedirectResponse(url='/', status_code=303)
+
+@app.post("/subscribe")
+async def subscribe(request: Request, contact: str = Form(...), method: str = Form(...), db: Session = Depends(get_db)):
+    # Összes eddigi poszt
+    all_posts = db.query(ImageRecord).order_by(ImageRecord.created_at).all()
+    body = "Welcome! Here are all the posts so far:\n\n"
+    if all_posts:
+        for post in all_posts:
+            body += f"Fájlnév: {post.filename}\n Leírás: {post.description}\n Észlelt arcok száma: {post.num_people}\n Feltöltés Dátuma: {post.created_at}\n###########\n"
+    else:
+        body = "Welcome! There are no posts yet."
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(f'{NTIFY_URL}/subscribe', data={"method": method, "contact": contact, "body": body})
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail="Subscription failed")
+
+    return RedirectResponse(url="/", status_code=303)
+
+
+async def notify(post):
+    poststr = f"New post\n\n Fájlnév: {post.filename}\n Leírás: {post.description}\n Észlelt arcok száma: {post.num_people}\n Feltöltés Dátuma: {post.created_at}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(f'{NTIFY_URL}/notify', data={"notify": poststr})
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail="Notify failed")

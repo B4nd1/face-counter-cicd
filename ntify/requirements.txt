@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+#numpy
+python-multipart
+sqlalchemy
+psycopg2-binary

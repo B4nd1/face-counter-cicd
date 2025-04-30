@@ -7,6 +7,7 @@ services:
     environment:
       - DATABASE_URL=${database_url}
       - DETECTOR_URL=${DETECTOR_URL}
+      - NTIFY_URL=${NTIFY_URL}
     volumes:
       - images-data:/usr/src/app/images
     depends_on:
@@ -31,7 +32,26 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  ntify:
+    build: ./ntify
+    ports:
+      - "8002:8000"
+    env_file: .env
+    environment:
+      - NTFY_DATABASE_URL=${NTFY_DATABASE_URL}
+
+  ntifydb:
+    image: postgres:15
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ntifydb-data:/var/lib/postgresql/data
+
 
 volumes:
   images-data:
   db-data:
+  ntifydb-data:
