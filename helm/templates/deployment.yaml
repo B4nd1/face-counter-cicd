@@ -71,6 +71,16 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: database_url
+            - name: DETECTOR_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: detector_url
+            - name: NTIFY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ntify_url
           volumeMounts:
             - name: images-data
               mountPath: /usr/src/app/images
@@ -152,6 +162,11 @@ spec:
       labels:
         app: ntify
     spec:
+      initContainers:
+        - name: check-db-ready
+          image: postgres:15
+          command: [ 'sh', '-c',
+                     'until pg_isready -h ntifydb -p 5432; do echo waiting for database; sleep 2; done;' ]
       containers:
         - name: ntify
           image: b4nd1/ntify_facedetect:{{ .Values.env.NTIFY_VERSION }}
@@ -159,6 +174,37 @@ spec:
             - name: http
               containerPort: 8000
               protocol: TCP
+          env:
+            - name: NTFY_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ntify_dburl
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smtp_host
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smtp_port
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smtp_user
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smtp_pass
+            - name: EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smtp_email_from
           readinessProbe:
             httpGet:
               path: /health
