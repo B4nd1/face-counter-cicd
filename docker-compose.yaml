@@ -13,6 +13,7 @@ services:
     depends_on:
       - db
       - detector
+      - ntify
 
   detector:
     build: ./detector
@@ -39,6 +40,8 @@ services:
     env_file: .env
     environment:
       - NTFY_DATABASE_URL=${NTFY_DATABASE_URL}
+    depends_on:
+      - ntifydb
 
   ntifydb:
     image: postgres:15

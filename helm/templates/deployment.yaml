@@ -136,3 +136,85 @@ spec:
         - name: db-data
           persistentVolumeClaim:
             claimName: db-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntify
+  labels:
+    app: ntify
+spec:
+  selector:
+    matchLabels:
+      app: ntify
+  template:
+    metadata:
+      labels:
+        app: ntify
+    spec:
+      containers:
+        - name: ntify
+          image: b4nd1/ntify_facedetect:{{ .Values.env.NTIFY_VERSION }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntifydb
+  labels:
+    app: ntifydb
+spec:
+  selector:
+    matchLabels:
+      app: ntifydb
+  template:
+    metadata:
+      labels:
+        app: ntifydb
+    spec:
+      containers:
+        - name: ntifydb
+          image: postgres:15
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-db
+          volumeMounts:
+            - name: ntifydb-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: ntifydb-data
+          persistentVolumeClaim:
+            claimName: ntifydb-pvc

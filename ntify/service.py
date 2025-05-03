@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
-subscribed_to_options = ["all", "only-posts-from-now-on"]
+# subscribed_to_options = ["all", "only-posts-from-now-on"]
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 @app.post("/subscribe")
 async def subscribe(
